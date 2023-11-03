@@ -4,6 +4,10 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import TensorDataset, DataLoader
 
+import tensorflow as tf
+import tensorflow.keras.layers as L
+from tensorflow.keras import Sequential, Model
+
 from ML.utils import segment_hand
 
 class CNNModel(nn.Module):
@@ -52,7 +56,7 @@ class CNNModel(nn.Module):
         # return the output predictions
         return output
     
-class AEModel(nn.Module):
+class AE(nn.Module):
   #initialise the model, ran before saving the model
     def __init__(self, n_past, n_future, n_features):
         super(AE, self).__init__()

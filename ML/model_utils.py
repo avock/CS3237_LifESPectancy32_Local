@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 
 from ML.utils import segment_hand
 
@@ -12,3 +13,10 @@ def classify_hand_gesture(model, bg_img, fg_img):
         _, pred = torch.max(output, 1)
         
     return pred.item()
+
+def detect_anomaly(model, X, Y):
+
+    with torch.no_grad():
+        accuracy = model.test_model(X, Y)
+        
+    return accuracy

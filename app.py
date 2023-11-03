@@ -8,7 +8,7 @@ import json
 import torch
  
 import cv2
-from ML.models import CNNModel, AEModel
+from ML.models import CNNModel, AE
 from ML.model_utils import classify_hand_gesture
 
 from mqtt_server import MQTTServer
@@ -19,10 +19,11 @@ mqtt_server = MQTTServer()
 mqtt_server.start()
 
 cnn_model = CNNModel()
-cnn_model.load_state_dict(torch.load("./ML/model/handclassifier.pt",map_location=torch.device('cpu')))
+cnn_model.load_state_dict(torch.load("./ML/model/handclassifier.pt", map_location = torch.device('cpu')))
 
 features = ['temperature','relative_humidity','light_switch', 'ultrasonic','pir', 'pressure'] 
-ae_model = AEModel(60*24, 10, len(features))
+ae_model = AE(60*24, 10, len(features))
+ae_model = torch.load('./ML/model/autoencoder.pt')
 
 SERVER_URL = 'http://128.199.83.151:5000'
  
