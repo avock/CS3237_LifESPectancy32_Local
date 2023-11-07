@@ -30,7 +30,7 @@ class CNNModel(nn.Module):
         # linear layer
         self.fc1 = nn.Linear(in_features=19008, out_features=120)
         self.fc2 = nn.Linear(120,84)
-        self.fc3 = nn.Linear(84,6)
+        self.fc3 = nn.Linear(84,3)
 
 
     def forward(self, x):

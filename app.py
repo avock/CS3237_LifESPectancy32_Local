@@ -81,7 +81,7 @@ def upload_file():
         try:
             response = requests.post(SERVER_URL + '/gestures', json={'gesture': gesture})
             if response.status_code == 200:
-                print(response)
+                print(f'gesture received: {gesture}')
                 print('Successfully sent gesture data to the remote server.')
             else:
                 print('Failed to send gesture data to the remote server. Status code:', response.status_code)
