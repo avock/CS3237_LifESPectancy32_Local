@@ -1,10 +1,11 @@
 #app.py
 from flask import Flask, request, jsonify
+import requests
 import os
-import torch
+
  
 import cv2
-from ML.models import CNNModel, AE
+from ML.models import *
 from ML.model_utils import classify_gesture
 
 from mqtt_server import MQTTServer
@@ -109,16 +110,17 @@ def upload_file():
             print(f'Classified gesture is: {output_gesture}')
             
             # sending the classified result to cloud server
-            # try:
-            #     response = requests.post(SERVER_URL + '/gestures', json={'gesture': gesture})
-            #     if response.status_code == 200:
-            #         print(f'gesture received: {gesture}')
-            #         print('Successfully sent gesture data to the remote server.')
-            #     else:
-            #         print('Failed to send gesture data to the remote server. Status code:', response.status_code)
+            try:
+                response = requests.post(SERVER_URL + '/gestures', json={'gesture': gesture})
+                if response.status_code == 200:
+                    print(f'gesture received: {gesture}')
+                    print('Successfully sent gesture data to the remote server.')
+                else:
+                    print('Failed to send gesture data to the remote server. Status code:', response.status_code)
                 
-            # except requests.exceptions.RequestException as e:
-            #     print('Failed to connect to the remote server:', e)
+            except requests.exceptions.RequestException as e:
+                print('Failed to connect to the remote server:', e)
+            
         else:
             output_gesture = GestureType.GESTURE_ERROR.value
         
