@@ -2,8 +2,17 @@ import torch
 import numpy as np
 from cvzone.HandTrackingModule import HandDetector
 import cv2
+from enum import Enum
 
 from ML.utils import segment_hand
+
+class GestureType(Enum):
+    THUMBS_UP = "Thumbs Up"
+    CHEESE = "Cheese"
+    PALM = "Palm"
+    FIST = "Fist"
+    HAND_DETECTED = "Hand Detected, No Gesture"
+    NO_HAND_DETECTED = "No Hand Detected"
 
 # for one image classification ('blank'-0, 'ok'-1, 'thumbsup'-2, 'thumbsdown'-3, 'fist'-4, 'five'-5)
 def classify_hand_gesture(model, fg_img):
@@ -44,91 +53,25 @@ def classify_gesture(img):
         hands, img = detector.findHands(img, draw=False, flipType=True)
     except Exception as e:
         return f'Image file error: {str(e)}'
-    # Check if any hands are detected
     if hands:
-        # Information for the first hand detected
-        hand1 = hands[0]  # Get the first hand detected
-        # lmList1 = hand1["lmList"]  # List of 21 landmarks for the first hand
-        # bbox1 = hand1["bbox"]  # Bounding box around the first hand (x,y,w,h coordinates)
-        # center1 = hand1['center']  # Center coordinates of the first hand
-        # handType1 = hand1["type"]  # Type of the first hand ("Left" or "Right")
+        hand = hands[0]
 
-        # Count the number of fingers up for the first hand
         try:
-            fingers1 = detector.fingersUp(hand1)
+            # would return a tuple with 5 values, corresponding to each finger on the left hand      
+            fingers_up = detector.fingersUp(hand)
         except Exception as e:
             return f'cvzone detector error: {str(e)}'
         
-        if fingers1 == [1,0,0,0,0]:
-            # thumb_gesture_count += 1
-            # if thumb_gesture_count == 10:
-                # thumb_gesture_count = 0
-            print(f'Thumbs Up', end=" ")
-            return "Thumbs Up"
+        gesture_mapping = {
+            (1, 0, 0, 0, 0): GestureType.THUMBS_UP,
+            (0, 1, 1, 0, 0): GestureType.CHEESE,
+            (1, 1, 1, 1, 1): GestureType.PALM,
+            (0, 0, 0, 0, 0): GestureType.FIST,
+        }
 
-        # else:
-        #     thumb_gesture_count = 0
-        if fingers1 == [0,1,1,0,0]:
-            # peace_gesture_count += 1
-            # if peace_gesture_count == 10:
-            #     peace_gesture_count = 0
-            print(f'Cheese', end=" ")
-            return "Cheese"
-        # else:
-        #     peace_gesture_count = 0
-
-        if fingers1 == [1,1,1,1,1]:
-            # palm_gesture_count += 1
-            # if palm_gesture_count == 10:
-            #     palm_gesture_count = 0
-            print(f'Palm', end=" ")
-            return "Palm"     
-        # else:
-        #     palm_gesture_count = 0
-
-        if fingers1 == [0,0,0,0,0]:
-            # fist_gesture_count += 1
-            # if fist_gesture_count == 10:
-            #     fist_gesture_count = 0
-            print(f'Fist', end=" ")
-            return "Fist"
-        # else:
-        #     fist_gesture_count = 0
-        return "Hand Detected, no gesture"
+        gesture = gesture_mapping.get(tuple(fingers_up), GestureType.HAND_DETECTED)
+        return gesture
     
     else:
-        print("No hand detected")
-        return "No Hand"
-
-        
-    #     print(f'H1 = {fingers1.count(1)}', end=" ")  # Print the count of fingers that are up
-
-    #     # Calculate distance between specific landmarks on the first hand and draw it on the image
-    #     length, info, img = detector.findDistance(lmList1[8][0:2], lmList1[12][0:2], img, color=(255, 0, 255),
-    #                                               scale=10)
-
-    #     # Check if a second hand is detected
-    #     if len(hands) == 2:
-    #         # Information for the second hand
-    #         hand2 = hands[1]
-    #         lmList2 = hand2["lmList"]
-    #         bbox2 = hand2["bbox"]
-    #         center2 = hand2['center']
-    #         handType2 = hand2["type"]
-
-    #         # Count the number of fingers up for the second hand
-    #         fingers2 = detector.fingersUp(hand2)
-    #         print(f'H2 = {fingers2.count(1)}', end=" ")
-
-    #         # Calculate distance between the index fingers of both hands and draw it on the image
-    #         length, info, img = detector.findDistance(lmList1[8][0:2], lmList2[8][0:2], img, color=(255, 0, 0),
-    #                                                   scale=10)
-
-
-    #     print(" ")  # New line for better readability of the printed output
-
-    # # Display the image in a window
-    # cv2.imshow("Image", img)
-
-    # # Keep the window open and update it for each frame; wait for 1 millisecond between frames
-    # cv2.waitKey(1)
+        gesture = GestureType.NO_HAND_DETECTED
+        return gesture

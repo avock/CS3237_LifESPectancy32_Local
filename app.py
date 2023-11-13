@@ -67,7 +67,6 @@ def upload_file():
 
         fg_image = cv2.imread(os.path.join(app.config['UPLOAD_FOLDER'], FOREGROUND_FILENAME))        
         gesture = classify_gesture(fg_image)
-        print(gesture)
         
         if (not gesture):
             resp = jsonify({
@@ -75,6 +74,7 @@ def upload_file():
             })
             resp.status_code = 401
             return resp
+        
         gestures.append(gesture)
         if (gestures[0] == gestures[0] == gestures[0]):
             gestures = ['', '']
