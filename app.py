@@ -1,15 +1,11 @@
 #app.py
-from flask import Flask, json, request, jsonify, redirect, url_for
+from flask import Flask, request, jsonify
 import os
-import urllib.request
-from werkzeug.utils import secure_filename
-import requests
-import json
 import torch
  
 import cv2
 from ML.models import CNNModel, AE
-from ML.model_utils import classify_hand_gesture
+from ML.model_utils import classify_gesture
 
 from mqtt_server import MQTTServer
  
@@ -18,13 +14,13 @@ app = Flask(__name__, static_folder='../static')
 mqtt_server = MQTTServer()
 mqtt_server.start()
 
-cnn_model = CNNModel()
-cnn_model.load_state_dict(torch.load("./ML/model/new_handclassifier.pt", map_location = torch.device('cpu')))
-# cnn_model.load_state_dict(torch.load("./ML/model/handclassifier.pt", map_location = torch.device('cpu')))
+# cnn_model = CNNModel()
+# cnn_model.load_state_dict(torch.load("./ML/model/new_handclassifier.pt", map_location = torch.device('cpu')))
+# # cnn_model.load_state_dict(torch.load("./ML/model/handclassifier.pt", map_location = torch.device('cpu')))
 
-features = ['temperature','relative_humidity','light_switch', 'ultrasonic','pir', 'pressure'] 
-ae_model = AE(60*24, 10, len(features))
-ae_model = torch.load('./ML/model/autoencoder.pt')
+# features = ['temperature','relative_humidity','light_switch', 'ultrasonic','pir', 'pressure'] 
+# ae_model = AE(60*24, 10, len(features))
+# ae_model = torch.load('./ML/model/autoencoder.pt')
 
 SERVER_URL = 'http://128.199.83.151:5000'
  
@@ -65,13 +61,13 @@ def upload_file():
     else:
         errors[file.filename] = 'File type is not allowed'
     
-    # File saved succesfully, proceed with opencv image manipulation + gesture prediction
+    # File saved succesfully, proceed with opencv gesture prediction
     if success and not errors:
-        # bg_image = cv2.imread(os.path.join(app.config['UPLOAD_FOLDER'], BACKGROUND_FILENAME))
-        fg_image = cv2.imread(os.path.join(app.config['UPLOAD_FOLDER'], FOREGROUND_FILENAME))
+        gestures  = []
 
-        gesture = classify_hand_gesture(cnn_model, fg_image)
-        # gesture = classify_hand_gesture(cnn_model, bg_image, fg_image)
+        fg_image = cv2.imread(os.path.join(app.config['UPLOAD_FOLDER'], FOREGROUND_FILENAME))        
+        gesture = classify_gesture(fg_image)
+        print(gesture)
         
         if (not gesture):
             resp = jsonify({
@@ -79,17 +75,25 @@ def upload_file():
             })
             resp.status_code = 401
             return resp
-            
-        try:
-            response = requests.post(SERVER_URL + '/gestures', json={'gesture': gesture})
-            if response.status_code == 200:
-                print(f'gesture received: {gesture}')
-                print('Successfully sent gesture data to the remote server.')
-            else:
-                print('Failed to send gesture data to the remote server. Status code:', response.status_code)
-            
-        except requests.exceptions.RequestException as e:
-            print('Failed to connect to the remote server:', e)
+        gestures.append(gesture)
+        if (gestures[0] == gestures[0] == gestures[0]):
+            gestures = ['', '']
+            print(f'Classified gesture is: {gesture}')
+
+            # sending the classified result to cloud server
+            # try:
+            #     response = requests.post(SERVER_URL + '/gestures', json={'gesture': gesture})
+            #     if response.status_code == 200:
+            #         print(f'gesture received: {gesture}')
+            #         print('Successfully sent gesture data to the remote server.')
+            #     else:
+            #         print('Failed to send gesture data to the remote server. Status code:', response.status_code)
+                
+            # except requests.exceptions.RequestException as e:
+            #     print('Failed to connect to the remote server:', e)
+
+        else:
+            gestures.pop(0)
             
         resp = jsonify({
             'gesture': f'{gesture}',
