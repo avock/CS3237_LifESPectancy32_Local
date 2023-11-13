@@ -8,6 +8,8 @@ from ML.models import CNNModel, AE
 from ML.model_utils import classify_gesture
 
 from mqtt_server import MQTTServer
+
+from constants import *
  
 app = Flask(__name__, static_folder='../static')
  
@@ -29,7 +31,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
  
 ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'])
-FOREGROUND_FILENAME = 'esp32_cam_fg.jpg'
+FOREGROUND_FILENAME = 'esp32_cam_fg'
 BACKGROUND_FILENAME = 'esp32_cam_bg.jpg'
  
 def allowed_filetype(filename):
@@ -53,33 +55,59 @@ def upload_file():
      
     # Checks for validity of image filetype
     if allowed_filetype(file.filename):
-        if not os.path.exists(app.config['UPLOAD_FOLDER']):
-            os.makedirs(app.config['UPLOAD_FOLDER'])
+        filepaths = [
+            os.path.join(app.config['UPLOAD_FOLDER'], f"{FOREGROUND_FILENAME}_{i}.jpg") for i in range(1, 4)
+        ]
+        exist_files = [os.path.exists(filepath) for filepath in filepaths]
 
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], FOREGROUND_FILENAME))
-        success = True
+        if all(exist_files):
+            " All 3 files currently exist "
+            os.rename(filepaths[1], filepaths[0])
+            os.rename(filepaths[2], filepaths[1])
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], f"{FOREGROUND_FILENAME}_3.jpg"))
+            
+            success = True
+            
+        elif any(exist_files):
+            " 1/2 files exist, no reshufling required, but need to take care of index "
+            available_suffix = exist_files.index(False) + 1
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], f"{FOREGROUND_FILENAME}_{available_suffix}.jpg"))
+            
+            success = True
+        
+        else:
+            " No files exist, add first one "
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], f"{FOREGROUND_FILENAME}_1.jpg"))
+            
+            success = True
+
     else:
         errors[file.filename] = 'File type is not allowed'
     
     # File saved succesfully, proceed with opencv gesture prediction
     if success and not errors:
-        gestures  = []
-
-        fg_image = cv2.imread(os.path.join(app.config['UPLOAD_FOLDER'], FOREGROUND_FILENAME))        
-        gesture = classify_gesture(fg_image)
         
-        if (not gesture):
-            resp = jsonify({
-                'message': 'Somehting Went Wrong with the Gesture Recognition'
-            })
-            resp.status_code = 401
-            return resp
-        
-        gestures.append(gesture)
-        if (gestures[0] == gestures[0] == gestures[0]):
-            gestures = ['', '']
-            print(f'Classified gesture is: {gesture}')
+        gestures = []
+        output_gesture = None
 
+        for i in range(1, 4):
+            fg_image = cv2.imread(os.path.join(app.config['UPLOAD_FOLDER'], f"{FOREGROUND_FILENAME}_{i}.jpg"))
+            gesture = classify_gesture(fg_image)
+
+            if not gesture:
+                resp = jsonify({
+                    'message': f'Something Went Wrong with Gesture Recognition for {FOREGROUND_FILENAME}_{i}.jpg'
+                })
+                resp.status_code = 401
+                return resp
+
+            gestures.append(gesture)
+            
+        if (gestures[0] == gestures[1] == gestures[2]):
+            
+            output_gesture = gestures[2]
+            print(f'Classified gesture is: {output_gesture}')
+            
             # sending the classified result to cloud server
             # try:
             #     response = requests.post(SERVER_URL + '/gestures', json={'gesture': gesture})
@@ -91,12 +119,11 @@ def upload_file():
                 
             # except requests.exceptions.RequestException as e:
             #     print('Failed to connect to the remote server:', e)
-
         else:
-            gestures.pop(0)
-            
+            output_gesture = GestureType.GESTURE_ERROR.value
+        
         resp = jsonify({
-            'gesture': f'{gesture}',
+            'gesture': f'{output_gesture}',
             'message' : 'Files successfully uploaded'})
         resp.status_code = 201
         return resp

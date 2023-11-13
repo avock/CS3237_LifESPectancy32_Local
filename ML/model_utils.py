@@ -2,17 +2,9 @@ import torch
 import numpy as np
 from cvzone.HandTrackingModule import HandDetector
 import cv2
-from enum import Enum
 
 from ML.utils import segment_hand
-
-class GestureType(Enum):
-    THUMBS_UP = "Thumbs Up"
-    CHEESE = "Cheese"
-    PALM = "Palm"
-    FIST = "Fist"
-    HAND_DETECTED = "Hand Detected, No Gesture"
-    NO_HAND_DETECTED = "No Hand Detected"
+from constants import *
 
 # for one image classification ('blank'-0, 'ok'-1, 'thumbsup'-2, 'thumbsdown'-3, 'fist'-4, 'five'-5)
 def classify_hand_gesture(model, fg_img):
@@ -63,15 +55,15 @@ def classify_gesture(img):
             return f'cvzone detector error: {str(e)}'
         
         gesture_mapping = {
-            (1, 0, 0, 0, 0): GestureType.THUMBS_UP,
-            (0, 1, 1, 0, 0): GestureType.CHEESE,
-            (1, 1, 1, 1, 1): GestureType.PALM,
-            (0, 0, 0, 0, 0): GestureType.FIST,
+            (1, 0, 0, 0, 0): GestureType.THUMBS_UP.value,
+            (0, 1, 1, 0, 0): GestureType.CHEESE.value,
+            (1, 1, 1, 1, 1): GestureType.PALM.value,
+            (0, 0, 0, 0, 0): GestureType.FIST.value,
         }
 
-        gesture = gesture_mapping.get(tuple(fingers_up), GestureType.HAND_DETECTED)
+        gesture = gesture_mapping.get(tuple(fingers_up), GestureType.HAND_DETECTED.value)
         return gesture
     
     else:
-        gesture = GestureType.NO_HAND_DETECTED
+        gesture = GestureType.NO_HAND_DETECTED.value
         return gesture
