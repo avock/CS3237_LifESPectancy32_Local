@@ -19,7 +19,8 @@ mqtt_server = MQTTServer()
 mqtt_server.start()
 
 cnn_model = CNNModel()
-cnn_model.load_state_dict(torch.load("./ML/model/handclassifier.pt", map_location = torch.device('cpu')))
+cnn_model.load_state_dict(torch.load("./ML/model/new_handclassifier.pt", map_location = torch.device('cpu')))
+# cnn_model.load_state_dict(torch.load("./ML/model/handclassifier.pt", map_location = torch.device('cpu')))
 
 features = ['temperature','relative_humidity','light_switch', 'ultrasonic','pir', 'pressure'] 
 ae_model = AE(60*24, 10, len(features))
@@ -66,10 +67,11 @@ def upload_file():
     
     # File saved succesfully, proceed with opencv image manipulation + gesture prediction
     if success and not errors:
-        bg_image = cv2.imread(os.path.join(app.config['UPLOAD_FOLDER'], BACKGROUND_FILENAME))
+        # bg_image = cv2.imread(os.path.join(app.config['UPLOAD_FOLDER'], BACKGROUND_FILENAME))
         fg_image = cv2.imread(os.path.join(app.config['UPLOAD_FOLDER'], FOREGROUND_FILENAME))
 
-        gesture = classify_hand_gesture(cnn_model, bg_image, fg_image)
+        gesture = classify_hand_gesture(cnn_model, fg_image)
+        # gesture = classify_hand_gesture(cnn_model, bg_image, fg_image)
         
         if (not gesture):
             resp = jsonify({
