@@ -34,6 +34,8 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'])
 FOREGROUND_FILENAME = 'esp32_cam_fg'
 BACKGROUND_FILENAME = 'esp32_cam_bg.jpg'
+
+gesture = []
  
 def allowed_filetype(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -44,6 +46,7 @@ def main():
  
 @app.route('/image/upload', methods=['POST'])
 def upload_file():
+    print('Image Received')
     # check if the post request has the file part
     if 'imageFile' not in request.files:
         resp = jsonify({'message' : 'No file part in the request'})
@@ -167,9 +170,9 @@ def upload_background():
         resp.status_code = 500
         return resp
  
-# @app.route('/anomaly_check', methods=['POST'])
-# def anomaly_check():
-    
+@app.route('/anomaly_check', methods=['GET'])
+def anomaly_check():
+    return 'blablabal'
  
 @app.route('/<path:path>')
 def fallback(path):
